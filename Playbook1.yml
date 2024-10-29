@@ -1,15 +1,37 @@
 ---
 
-- name: Network Getting Started First Playbook
+- name: Network Getting Started First Playbook Extended
   connection: ansible.netcommon.network_cli
   gather_facts: false
   hosts: all
   tasks:
 
+    - name: Define hostname map
+      set_fact:
+        hostname_map:
+          "192.168.123.1": "R1-Ansible"
+          "192.168.123.2": "R2-Ansible"
+          "192.168.123.3": "R3-Ansible"
+
     - name: Get config for VyOS devices
       vyos.vyos.vyos_facts:
         gather_subset: all
 
-    - name: Display the config
+    - name: Display the current config
       debug:
         msg: "The hostname is {{ ansible_net_hostname }} and the OS is {{ ansible_net_version }}"
+
+    - name: Update the hostname for each router
+      vyos.vyos.vyos_config:
+        backup: yes
+        save: yes
+        lines:
+          - set system host-name "{{ hostname_map[inventory_hostname] }}"
+
+    - name: Get changed config for VyOS devices
+      vyos.vyos.vyos_facts:
+        gather_subset: all
+
+    - name: Display the changed config
+      debug:
+        msg: "The new hostname is {{ ansible_net_hostname }} and the OS is {{ ansible_net_version }}"
